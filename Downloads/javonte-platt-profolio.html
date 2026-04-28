@@ -480,6 +480,29 @@
   }
   .warp-grid canvas { width: 100%; height: 100%; }
 
+  /* HAMBURGER */
+  .nav-hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    z-index: 101;
+  }
+  .nav-hamburger span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--star-white);
+    border-radius: 2px;
+    transition: all 0.3s;
+  }
+  .nav-hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+  .nav-hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+  .nav-hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
   /* FOOTER */
   footer {
     padding: 40px 0;
@@ -735,13 +758,76 @@
   }
 
   @media (max-width: 768px) {
-    .hero-inner { grid-template-columns: 1fr; }
-    .hero-visual { display: none; }
-    #about .container { grid-template-columns: 1fr; }
-    .contact-inner { grid-template-columns: 1fr; }
-    .project-card.featured { grid-column: span 1; }
-    .nav-links { gap: 20px; }
+    /* Hide custom cursor on touch devices */
+    .cursor, .cursor-ring { display: none !important; }
+    body { cursor: auto !important; }
+    .btn, .tag, .project-card, .contact-link, .project-link { cursor: pointer; }
+
+    /* Hamburger nav */
+    .nav-hamburger { display: flex; }
+    nav { position: fixed; }
+    nav .container { position: relative; }
+    .nav-links {
+      display: none;
+      position: absolute;
+      top: calc(100% + 20px);
+      left: 0; right: 0;
+      flex-direction: column;
+      gap: 0;
+      background: rgba(2,1,10,0.98);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(107,33,214,0.2);
+      border-radius: 8px;
+      padding: 8px 20px 20px;
+      margin: 0 20px;
+    }
+    .nav-links.open { display: flex; }
+    .nav-links li { width: 100%; }
+    .nav-links a {
+      display: block;
+      padding: 14px 0;
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      border-bottom: 1px solid rgba(107,33,214,0.1);
+    }
+    .nav-links li:last-child a { border-bottom: none; }
+    .nav-links a::after { display: none; }
+
+    /* Layout */
     .container { padding: 0 20px; }
+    section { padding: 70px 0; }
+    .section-header { margin-bottom: 40px; }
+
+    /* Hero */
+    #hero { padding-top: 80px; }
+    .hero-inner { grid-template-columns: 1fr; gap: 0; }
+    .hero-visual { display: none; }
+    .hero-cta { flex-direction: column; align-items: stretch; }
+    .btn { justify-content: center; }
+
+    /* About */
+    #about .container { grid-template-columns: 1fr; gap: 40px; }
+
+    /* Projects */
+    .projects-grid { grid-template-columns: 1fr; }
+    .project-card.featured { grid-column: span 1; }
+    .project-card { padding: 24px; }
+
+    /* Timeline */
+    .timeline-item { gap: 16px; }
+    .timeline-content { padding: 20px; }
+    .timeline-header { flex-direction: column; align-items: flex-start; }
+
+    /* Education */
+    .credentials-grid { grid-template-columns: 1fr; }
+    .credential-card { padding: 24px; }
+
+    /* Contact */
+    .contact-inner { grid-template-columns: 1fr; gap: 40px; }
+    .contact-visual { display: none; }
+
+    /* Scroll indicator */
+    .scroll-indicator { display: none; }
   }
 </style>
 </head>
@@ -758,7 +844,10 @@
 <nav>
   <div class="container">
     <a href="#hero" class="nav-logo">JP<span>.</span></a>
-    <ul class="nav-links">
+    <button class="nav-hamburger" id="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="navLinks">
       <li><a href="#about">About</a></li>
       <li><a href="#experience">Experience</a></li>
       <li><a href="#education">Education</a></li>
@@ -1088,16 +1177,39 @@
 </footer>
 
 <script>
-// === CUSTOM CURSOR ===
+// === HAMBURGER MENU ===
+const hamburger = document.getElementById('hamburger');
+const navLinks = document.getElementById('navLinks');
+hamburger.addEventListener('click', () => {
+  hamburger.classList.toggle('open');
+  navLinks.classList.toggle('open');
+});
+navLinks.querySelectorAll('a').forEach(link => {
+  link.addEventListener('click', () => {
+    hamburger.classList.remove('open');
+    navLinks.classList.remove('open');
+  });
+});
+
+// === CUSTOM CURSOR (desktop only) ===
+const isTouchDevice = window.matchMedia('(hover: none)').matches;
 const cursor = document.getElementById('cursor');
 const ring = document.getElementById('cursorRing');
 let mx = 0, my = 0, rx = 0, ry = 0;
-document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cursor.style.left = mx+'px'; cursor.style.top = my+'px'; });
-(function animRing() { rx += (mx-rx)*0.12; ry += (my-ry)*0.12; ring.style.left = rx+'px'; ring.style.top = ry+'px'; requestAnimationFrame(animRing); })();
-document.querySelectorAll('a,button,.tag,.project-card').forEach(el => {
-  el.addEventListener('mouseenter', () => { cursor.style.width='20px'; cursor.style.height='20px'; ring.style.width='60px'; ring.style.height='60px'; });
-  el.addEventListener('mouseleave', () => { cursor.style.width='12px'; cursor.style.height='12px'; ring.style.width='36px'; ring.style.height='36px'; });
-});
+if (!isTouchDevice) {
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cursor.style.left = mx+'px'; cursor.style.top = my+'px'; });
+  (function animRing() { rx += (mx-rx)*0.12; ry += (my-ry)*0.12; ring.style.left = rx+'px'; ring.style.top = ry+'px'; requestAnimationFrame(animRing); })();
+} else {
+  cursor.style.display = 'none';
+  ring.style.display = 'none';
+  document.body.style.cursor = 'auto';
+}
+if (!isTouchDevice) {
+  document.querySelectorAll('a,button,.tag,.project-card').forEach(el => {
+    el.addEventListener('mouseenter', () => { cursor.style.width='20px'; cursor.style.height='20px'; ring.style.width='60px'; ring.style.height='60px'; });
+    el.addEventListener('mouseleave', () => { cursor.style.width='12px'; cursor.style.height='12px'; ring.style.width='36px'; ring.style.height='36px'; });
+  });
+}
 
 // === STARFIELD ===
 const canvas = document.getElementById('starfield');
